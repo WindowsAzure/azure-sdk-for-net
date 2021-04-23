@@ -60,6 +60,8 @@ namespace Azure.Messaging.ServiceBus.Amqp
         /// </summary>
         private readonly bool _isSessionReceiver;
 
+        private readonly bool _poolReceivedMessageBodies;
+
         /// <summary>
         /// The AMQP connection scope responsible for managing transport constructs for this instance.
         /// </summary>
@@ -106,9 +108,10 @@ namespace Azure.Messaging.ServiceBus.Amqp
         /// <param name="identifier">The identifier for the sender.</param>
         /// <param name="sessionId">The session ID to receive messages for.</param>
         /// <param name="isSessionReceiver">Whether or not this is a sessionful receiver link.</param>
+        /// <param name="poolReceivedMessageBodies">Whether or not the messages bodies use pooled byte arrays underneath in case of binary data. When this option is enabled the receiver needs to
+        /// dispose the received messages by using the <see cref="ServiceBusReceivedMessageExtensions.CreateBodyScope"/> extension.</param>
         /// <param name="cancellationToken">An optional <see cref="CancellationToken"/> instance to signal the request to cancel the
         /// open link operation. Only applicable for session receivers.</param>
-        ///
         /// <remarks>
         /// As an internal type, this class performs only basic sanity checks against its arguments.  It
         /// is assumed that callers are trusted and have performed deep validation.
@@ -126,6 +129,7 @@ namespace Azure.Messaging.ServiceBus.Amqp
             string identifier,
             string sessionId,
             bool isSessionReceiver,
+            bool poolReceivedMessageBodies,
             CancellationToken cancellationToken)
         {
             Argument.AssertNotNullOrEmpty(entityPath, nameof(entityPath));
@@ -136,6 +140,7 @@ namespace Azure.Messaging.ServiceBus.Amqp
             _connectionScope = connectionScope;
             _retryPolicy = retryPolicy;
             _isSessionReceiver = isSessionReceiver;
+            _poolReceivedMessageBodies = poolReceivedMessageBodies;
             _receiveMode = receiveMode;
             _identifier = identifier;
             _requestResponseLockedMessages = new ConcurrentExpiringSet<Guid>();
@@ -359,7 +364,7 @@ namespace Azure.Messaging.ServiceBus.Amqp
                         link.DisposeDelivery(message, true, AmqpConstants.AcceptedOutcome);
                     }
 
-                    receivedMessages.Add(AmqpMessageConverter.AmqpMessageToSBMessage(message));
+                    receivedMessages.Add(AmqpMessageConverter.AmqpMessageToSBMessage(message, _poolReceivedMessageBodies));
                     message.Dispose();
                 }
 
@@ -961,7 +966,7 @@ namespace Azure.Messaging.ServiceBus.Amqp
                 {
                     var payload = (ArraySegment<byte>)entry[ManagementConstants.Properties.Message];
                     var amqpMessage = AmqpMessage.CreateAmqpStreamMessage(new BufferListStream(new[] { payload }), true);
-                    message = AmqpMessageConverter.AmqpMessageToSBMessage(amqpMessage, true);
+                    message = AmqpMessageConverter.AmqpMessageToSBMessage(amqpMessage, _poolReceivedMessageBodies, true);
                     messages.Add(message);
                 }
 
@@ -1260,7 +1265,7 @@ namespace Azure.Messaging.ServiceBus.Amqp
                     {
                         var payload = (ArraySegment<byte>)entry[ManagementConstants.Properties.Message];
                         var amqpMessage = AmqpMessage.CreateAmqpStreamMessage(new BufferListStream(new[] { payload }), true);
-                        var message = AmqpMessageConverter.AmqpMessageToSBMessage(amqpMessage);
+                        var message = AmqpMessageConverter.AmqpMessageToSBMessage(amqpMessage, _poolReceivedMessageBodies);
                         if (entry.TryGetValue<Guid>(ManagementConstants.Properties.LockToken, out var lockToken))
                         {
                             message.LockTokenGuid = lockToken;
