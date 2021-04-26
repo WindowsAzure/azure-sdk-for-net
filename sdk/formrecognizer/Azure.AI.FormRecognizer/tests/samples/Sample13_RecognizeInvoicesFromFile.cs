@@ -44,19 +44,25 @@ namespace Azure.AI.FormRecognizer.Samples
 
             if (invoice.Fields.TryGetValue("VendorName", out FormField vendorNameField))
             {
-                if (vendorNameField.Value.ValueType == FieldValueType.String)
+                if (vendorNameField.Value.ValueType == FieldValueType.Float)
                 {
                     string vendorName = vendorNameField.Value.AsString();
-                    Console.WriteLine($"Vendor Name: '{vendorName}', with confidence {vendorNameField.Confidence}");
+                    if (!string.IsNullOrEmpty(vendorName))
+                    {
+                        Console.WriteLine($"Vendor Name: '{vendorName}', with confidence {vendorNameField.Confidence}");
+                    }
                 }
             }
 
             if (invoice.Fields.TryGetValue("CustomerName", out FormField customerNameField))
             {
-                if (customerNameField.Value.ValueType == FieldValueType.String)
+                if (customerNameField.Value.ValueType == FieldValueType.Float)
                 {
                     string customerName = customerNameField.Value.AsString();
-                    Console.WriteLine($"Customer Name: '{customerName}', with confidence {customerNameField.Confidence}");
+                    if (!string.IsNullOrEmpty(customerName))
+                    {
+                        Console.WriteLine($"Customer Name: '{customerName}', with confidence {customerNameField.Confidence}");
+                    }
                 }
             }
 
@@ -64,21 +70,23 @@ namespace Azure.AI.FormRecognizer.Samples
             {
                 if (itemsField.Value.ValueType == FieldValueType.List)
                 {
-                    foreach (FormField itemField in itemsField.Value.AsList())
+                    IReadOnlyList<FormField> itemFieldsList = itemsField.Value.AsList();
+                    foreach (FormField itemField in itemFieldsList)
                     {
                         Console.WriteLine("Item:");
 
                         if (itemField.Value.ValueType == FieldValueType.Dictionary)
                         {
                             IReadOnlyDictionary<string, FormField> itemFields = itemField.Value.AsDictionary();
-
                             if (itemFields.TryGetValue("Description", out FormField itemDescriptionField))
                             {
                                 if (itemDescriptionField.Value.ValueType == FieldValueType.String)
                                 {
                                     string itemDescription = itemDescriptionField.Value.AsString();
-
-                                    Console.WriteLine($"  Description: '{itemDescription}', with confidence {itemDescriptionField.Confidence}");
+                                    if (!string.IsNullOrEmpty(itemDescription))
+                                    {
+                                        Console.WriteLine($"Description: '{itemDescription}', with confidence {itemDescriptionField.Confidence}");
+                                    }
                                 }
                             }
 
@@ -86,9 +94,23 @@ namespace Azure.AI.FormRecognizer.Samples
                             {
                                 if (itemQuantityField.Value.ValueType == FieldValueType.Float)
                                 {
-                                    float quantityAmount = itemQuantityField.Value.AsFloat();
+                                    float? quantityAmount = itemQuantityField.Value.AsFloatOrNull();
+                                    if (quantityAmount.HasValue)
+                                    {
+                                        Console.WriteLine($"  Quantity: '{quantityAmount}', with confidence {itemQuantityField.Confidence}");
+                                    }
+                                }
+                            }
 
-                                    Console.WriteLine($"  Quantity: '{quantityAmount}', with confidence {itemQuantityField.Confidence}");
+                            if (itemFields.TryGetValue("Unit", out FormField itemUnitField))
+                            {
+                                if (itemUnitField.Value.ValueType == FieldValueType.Float)
+                                {
+                                    float? itemUnit = itemUnitField.Value.AsFloatOrNull();
+                                    if (itemUnit.HasValue)
+                                    {
+                                        Console.WriteLine($"  Unit: '{itemUnit}', with confidence {itemUnitField.Confidence}");
+                                    }
                                 }
                             }
 
@@ -96,9 +118,11 @@ namespace Azure.AI.FormRecognizer.Samples
                             {
                                 if (itemUnitPriceField.Value.ValueType == FieldValueType.Float)
                                 {
-                                    float itemUnitPrice = itemUnitPriceField.Value.AsFloat();
-
-                                    Console.WriteLine($"  UnitPrice: '{itemUnitPrice}', with confidence {itemUnitPriceField.Confidence}");
+                                    float? itemUnitPrice = itemUnitPriceField.Value.AsFloatOrNull();
+                                    if (itemUnitPrice.HasValue)
+                                    {
+                                        Console.WriteLine($"  UnitPrice: '{itemUnitPrice}', with confidence {itemUnitPriceField.Confidence}");
+                                    }
                                 }
                             }
 
@@ -106,15 +130,10 @@ namespace Azure.AI.FormRecognizer.Samples
                             {
                                 if (itemTaxPriceField.Value.ValueType == FieldValueType.Float)
                                 {
-                                    try
+                                    float? itemUnitPrice = itemUnitPriceField.Value.AsFloatOrNull();
+                                    if (itemUnitPrice.HasValue)
                                     {
-                                        float itemTax = itemTaxPriceField.Value.AsFloat();
-                                        Console.WriteLine($"  Tax: '{itemTax}', with confidence {itemTaxPriceField.Confidence}");
-                                    }
-                                    catch
-                                    {
-                                        string itemTaxText = itemTaxPriceField.ValueData.Text;
-                                        Console.WriteLine($"  Tax: '{itemTaxText}', with confidence {itemTaxPriceField.Confidence}");
+                                        Console.WriteLine($"  UnitPrice: '{itemUnitPrice}', with confidence {itemUnitPriceField.Confidence}");
                                     }
                                 }
                             }
@@ -123,9 +142,11 @@ namespace Azure.AI.FormRecognizer.Samples
                             {
                                 if (itemAmountField.Value.ValueType == FieldValueType.Float)
                                 {
-                                    float itemAmount = itemAmountField.Value.AsFloat();
-
-                                    Console.WriteLine($"  Amount: '{itemAmount}', with confidence {itemAmountField.Confidence}");
+                                    float? itemAmount = itemAmountField.Value.AsFloatOrNull();
+                                    if (itemAmount.HasValue)
+                                    {
+                                        Console.WriteLine($"  Amount: '{itemAmount}', with confidence {itemAmountField.Confidence}");
+                                    }
                                 }
                             }
                         }
@@ -137,8 +158,11 @@ namespace Azure.AI.FormRecognizer.Samples
             {
                 if (subTotalField.Value.ValueType == FieldValueType.Float)
                 {
-                    float subTotal = subTotalField.Value.AsFloat();
-                    Console.WriteLine($"Sub Total: '{subTotal}', with confidence {subTotalField.Confidence}");
+                    float? subTotal = subTotalField.Value.AsFloatOrNull();
+                    if (subTotal.HasValue)
+                    {
+                        Console.WriteLine($"Sub Total: '{subTotal}', with confidence {subTotalField.Confidence}");
+                    }
                 }
             }
 
@@ -146,8 +170,11 @@ namespace Azure.AI.FormRecognizer.Samples
             {
                 if (totalTaxField.Value.ValueType == FieldValueType.Float)
                 {
-                    float totalTax = totalTaxField.Value.AsFloat();
-                    Console.WriteLine($"Total Tax: '{totalTax}', with confidence {totalTaxField.Confidence}");
+                    float? totalTax = totalTaxField.Value.AsFloatOrNull();
+                    if (totalTax.HasValue)
+                    {
+                        Console.WriteLine($"Total Tax: '{totalTax}', with confidence {totalTaxField.Confidence}");
+                    }
                 }
             }
 
@@ -155,8 +182,11 @@ namespace Azure.AI.FormRecognizer.Samples
             {
                 if (invoiceTotalField.Value.ValueType == FieldValueType.Float)
                 {
-                    float invoiceTotal = invoiceTotalField.Value.AsFloat();
-                    Console.WriteLine($"Invoice Total: '{invoiceTotal}', with confidence {invoiceTotalField.Confidence}");
+                    float? invoiceTotal = invoiceTotalField.Value.AsFloatOrNull();
+                    if (invoiceTotal.HasValue)
+                    {
+                        Console.WriteLine($"Invoice Total: '{invoiceTotal}', with confidence {invoiceTotalField.Confidence}");
+                    }
                 }
             }
 
