@@ -4,36 +4,38 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Azure.Analytics.Synapse.Spark.Models;
+using Azure;
 using Azure.Core;
 using Azure.Core.Pipeline;
 
 namespace Azure.Analytics.Synapse.Spark
 {
-    [CodeGenSuppress("CreateSparkBatchJob", typeof(SparkBatchJobOptions), typeof(bool?), typeof(CancellationToken))]
-    [CodeGenSuppress("CreateSparkBatchJobAsync", typeof(SparkBatchJobOptions), typeof(bool?), typeof(CancellationToken))]
+    #pragma warning disable AZC0002
+
+    [CodeGenSuppress("CreateSparkBatchJob", typeof(RequestContent), typeof(bool?), typeof(RequestOptions))]
+    [CodeGenSuppress("CreateSparkBatchJobAsync", typeof(RequestContent), typeof(bool?), typeof(RequestOptions))]
     public partial class SparkBatchClient
     {
-        public virtual async Task<SparkBatchOperation> StartCreateSparkBatchJobAsync(SparkBatchJobOptions sparkBatchJobOptions, bool? detailed = null, CancellationToken cancellationToken = default)
-            => await StartCreateSparkBatchJobInternal (true, sparkBatchJobOptions, detailed, cancellationToken).ConfigureAwait(false);
+        public virtual async Task<SparkBatchOperation> StartCreateSparkBatchJobAsync(RequestContent requestBody, bool? detailed = null, RequestOptions requestOptions = default)
+            => await StartCreateSparkBatchJobInternal (true, requestBody, detailed, requestOptions).ConfigureAwait(false);
 
-        public virtual SparkBatchOperation StartCreateSparkBatchJob(SparkBatchJobOptions sparkBatchJobOptions, bool? detailed = null, CancellationToken cancellationToken = default)
-            => StartCreateSparkBatchJobInternal (false, sparkBatchJobOptions, detailed, cancellationToken).EnsureCompleted();
+        public virtual SparkBatchOperation StartCreateSparkBatchJob(RequestContent requestBody, bool? detailed = null, RequestOptions requestOptions = default)
+            => StartCreateSparkBatchJobInternal (false, requestBody, detailed, requestOptions).EnsureCompleted();
 
-        private async Task<SparkBatchOperation> StartCreateSparkBatchJobInternal (bool async, SparkBatchJobOptions sparkBatchJobOptions, bool? detailed = null, CancellationToken cancellationToken = default)
+        private async Task<SparkBatchOperation> StartCreateSparkBatchJobInternal (bool async, RequestContent requestBody, bool? detailed = null, RequestOptions requestOptions = default)
         {
             using DiagnosticScope scope = _clientDiagnostics.CreateScope($"{nameof(SparkBatchClient)}.{nameof(StartCreateSparkBatchJob)}");
             scope.Start();
             try
             {
-                Response<SparkBatchJob> batchSession;
+                Response batchSession;
                 if (async)
                 {
-                    batchSession = await RestClient.CreateSparkBatchJobAsync(sparkBatchJobOptions, detailed, cancellationToken).ConfigureAwait(false);
+                    batchSession = await CreateSparkBatchJobAsync(requestBody, detailed, requestOptions).ConfigureAwait(false);
                 }
                 else
                 {
-                    batchSession = RestClient.CreateSparkBatchJob(sparkBatchJobOptions, detailed, cancellationToken);
+                    batchSession = CreateSparkBatchJob(requestBody, detailed, requestOptions);
                 }
                 return new SparkBatchOperation(this, _clientDiagnostics, batchSession);
             }
@@ -44,4 +46,6 @@ namespace Azure.Analytics.Synapse.Spark
             }
         }
     }
+
+    #pragma warning restore AZC0002
 }

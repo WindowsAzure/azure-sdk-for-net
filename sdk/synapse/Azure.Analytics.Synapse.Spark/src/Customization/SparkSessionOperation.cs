@@ -4,35 +4,33 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Azure.Core;
 using Azure.Core.Pipeline;
-using Azure.Analytics.Synapse.Spark.Models;
 
 namespace Azure.Analytics.Synapse.Spark
 {
     /// <summary>
     /// A long-running operation for:
-    /// <see cref="SparkSessionClient.StartCreateSparkSession(SparkSessionOptions, bool?, CancellationToken)"/>,
-    /// <see cref="SparkSessionClient.StartCreateSparkSessionAsync(SparkSessionOptions, bool?, CancellationToken)"/>,
+    /// <see cref="SparkSessionClient.StartCreateSparkSession(RequestContent, bool?, RequestOptions)"/>,
+    /// <see cref="SparkSessionClient.StartCreateSparkSessionAsync(RequestContent, bool?, RequestOptions)"/>,
     /// </summary>
-    public class SparkSessionOperation : Operation<SparkSession>
+    public class SparkSessionOperation : Operation<BinaryData>
     {
         private static readonly TimeSpan s_defaultPollingInterval = TimeSpan.FromSeconds(5);
 
         private readonly ClientDiagnostics _diagnostics;
 
         private readonly SparkSessionClient _client;
-        private readonly SparkSession _value;
-        private Response<SparkSession> _response;
+        private Response _response;
         private bool _completed;
         private RequestFailedException _requestFailedException;
 
-        internal SparkSessionOperation(SparkSessionClient client, ClientDiagnostics diagnostics, Response<SparkSession> response)
+        internal SparkSessionOperation(SparkSessionClient client, ClientDiagnostics diagnostics, Response response)
         {
             _client = client;
-            _value = response.Value ?? throw new InvalidOperationException("The response does not contain a value.");
             _response = response;
             _diagnostics = diagnostics;
         }
@@ -41,16 +39,16 @@ namespace Azure.Analytics.Synapse.Spark
         protected SparkSessionOperation() {}
 
         /// <inheritdoc/>
-        public override string Id => _value.Id.ToString(CultureInfo.InvariantCulture);
+        public override string Id => JsonDocument.Parse(_response.Content).RootElement.GetProperty(nameof(Id)).GetString();
 
         /// <summary>
-        /// Gets the <see cref="SparkSession"/>.
+        /// Gets the <see cref="BinaryData"/>.
         /// You should await <see cref="WaitForCompletionAsync(CancellationToken)"/> before attempting to use session in this pending state.
         /// </summary>
         /// <remarks>
-        /// Azure Synapse will return a <see cref="SparkSession"/> immediately but may take time to the session to be ready.
+        /// Azure Synapse will return a <see cref="BinaryData"/> immediately but may take time to the session to be ready.
         /// </remarks>
-        public override SparkSession Value
+        public override BinaryData Value
         {
             get
             {
@@ -64,7 +62,7 @@ namespace Azure.Analytics.Synapse.Spark
                     throw _requestFailedException;
                 }
 #pragma warning restore CA1065 // Do not raise exceptions in unexpected locations
-                return _value;
+                return _response.Content;
             }
         }
 
@@ -74,10 +72,10 @@ namespace Azure.Analytics.Synapse.Spark
         /// <inheritdoc/>
         public override bool HasValue => !_responseHasError && HasCompleted;
 
-        private bool _responseHasError => StringComparer.OrdinalIgnoreCase.Equals ("error", _response?.Value?.State);
+        private bool _responseHasError => StringComparer.OrdinalIgnoreCase.Equals ("error", JsonDocument.Parse(_response.Content).RootElement.GetProperty("State").GetString());
 
         /// <inheritdoc/>
-        public override Response GetRawResponse() => _response.GetRawResponse();
+        public override Response GetRawResponse() => _response;
 
         /// <inheritdoc/>
         public override Response UpdateStatus(CancellationToken cancellationToken = default) => UpdateStatusAsync(false, cancellationToken).EnsureCompleted();
@@ -86,11 +84,11 @@ namespace Azure.Analytics.Synapse.Spark
         public override async ValueTask<Response> UpdateStatusAsync(CancellationToken cancellationToken = default) => await UpdateStatusAsync(true, cancellationToken).ConfigureAwait(false);
 
         /// <inheritdoc />
-        public override ValueTask<Response<SparkSession>> WaitForCompletionAsync(CancellationToken cancellationToken = default) =>
+        public override ValueTask<Response<BinaryData>> WaitForCompletionAsync(CancellationToken cancellationToken = default) =>
             this.DefaultWaitForCompletionAsync(s_defaultPollingInterval, cancellationToken);
 
         /// <inheritdoc />
-        public override ValueTask<Response<SparkSession>> WaitForCompletionAsync(TimeSpan pollingInterval, CancellationToken cancellationToken) =>
+        public override ValueTask<Response<BinaryData>> WaitForCompletionAsync(TimeSpan pollingInterval, CancellationToken cancellationToken) =>
             this.DefaultWaitForCompletionAsync(pollingInterval, cancellationToken);
 
         private async ValueTask<Response> UpdateStatusAsync(bool async, CancellationToken cancellationToken)
@@ -102,15 +100,17 @@ namespace Azure.Analytics.Synapse.Spark
 
                 try
                 {
+                    int id = Int32.Parse(Id, CultureInfo.InvariantCulture);
                     if (async)
                     {
-                        _response = await _client.RestClient.GetSparkSessionAsync(_value.Id, true, cancellationToken).ConfigureAwait(false);
+                        _response = await _client.GetSparkSessionAsync(id, true, new RequestOptions () { CancellationToken = cancellationToken }).ConfigureAwait(false);
                     }
                     else
                     {
-                        _response = _client.RestClient.GetSparkSession(_value.Id, true, cancellationToken);
+                        _response = _client.GetSparkSession(id, true, new RequestOptions () { CancellationToken = cancellationToken });
                     }
-                    _completed = IsJobComplete(_response.Value.Result.ToString(), _response.Value.State);
+                    var doc = JsonDocument.Parse(_response.Content);
+                    _completed = IsJobComplete(doc.RootElement.GetProperty("Result").GetString(), doc.RootElement.GetProperty("State").GetString());
                 }
                 catch (RequestFailedException e)
                 {
