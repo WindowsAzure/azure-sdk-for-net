@@ -85,7 +85,7 @@ namespace Azure.Security.KeyVault.Administration.Tests
 
             if (Mode != RecordedTestMode.Playback)
             {
-                await Task.Delay(delay ?? KeyVaultTestEnvironment.DefaultPollingInterval);
+                await Task.Delay(delay ?? PollingInterval);
             }
             else if (playbackDelay != null)
             {

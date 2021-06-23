@@ -5,7 +5,7 @@ extends:
   parameters:
     ServiceDirectory: keyvault
     MaxParallel: 5
-    TimeoutInMinutes: 240
+    TimeoutInMinutes: 360
     SupportedClouds: 'Public,UsGov,China,Canary'
     CloudConfig:
       Public:
