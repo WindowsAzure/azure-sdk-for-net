@@ -18,8 +18,12 @@
     <SupportedPlatform Include="browser" />
   </ItemGroup>
 
-  <ItemGroup Condition="$(TargetFramework)!='net5.0'">
+  <ItemGroup>
     <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" />
+    <PackageReference Include="System.Memory.Data" />
+  </ItemGroup>
+
+  <ItemGroup Condition="$(TargetFramework)!='net5.0'">
     <PackageReference Include="System.Buffers" />
     <PackageReference Include="System.Diagnostics.DiagnosticSource" />
     <PackageReference Include="System.Memory" />
@@ -27,10 +31,6 @@
     <PackageReference Include="System.Threading.Tasks.Extensions" />
     <PackageReference Include="System.Text.Json" />
     <PackageReference Include="System.Text.Encodings.Web" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="System.Memory.Data" />
   </ItemGroup>
 
   <ItemGroup>
