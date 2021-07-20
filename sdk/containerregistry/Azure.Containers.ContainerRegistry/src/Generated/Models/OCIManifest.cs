@@ -8,34 +8,35 @@
 using System.Collections.Generic;
 using Azure.Core;
 
-namespace Azure.Containers.ContainerRegistry
+namespace Azure.Containers.ContainerRegistry.ResumableStorage
 {
     /// <summary> Returns the requested OCI Manifest file. </summary>
-    internal partial class OCIManifest : Manifest
+    internal partial class OciManifest : ImageManifest
     {
-        /// <summary> Initializes a new instance of OCIManifest. </summary>
-        public OCIManifest()
+        /// <summary> Initializes a new instance of OciManifest. </summary>
+        /// <param name="schemaVersion"> Schema version. </param>
+        internal OciManifest(int schemaVersion) : base(schemaVersion)
         {
-            Layers = new ChangeTrackingList<Descriptor>();
+            Layers = new ChangeTrackingList<ContentDescriptor>();
+            MediaType = "application/vnd.oci.image.manifest.v1+json";
         }
 
-        /// <summary> Initializes a new instance of OCIManifest. </summary>
+        /// <summary> Initializes a new instance of OciManifest. </summary>
         /// <param name="schemaVersion"> Schema version. </param>
-        /// <param name="config"> V2 image config descriptor. </param>
+        /// <param name="mediaType"> Media type for this Manifest. </param>
+        /// <param name="configDescriptor"> V2 image config descriptor. </param>
         /// <param name="layers"> List of V2 image layer information. </param>
         /// <param name="annotations"> Additional information provided through arbitrary metadata. </param>
-        internal OCIManifest(int? schemaVersion, Descriptor config, IList<Descriptor> layers, Annotations annotations) : base(schemaVersion)
+        internal OciManifest(int schemaVersion, string mediaType, ContentDescriptor configDescriptor, IReadOnlyList<ContentDescriptor> layers, OciManifestAnnotations annotations) : base(schemaVersion, mediaType)
         {
-            Config = config;
+            ConfigDescriptor = configDescriptor;
             Layers = layers;
             Annotations = annotations;
+            MediaType = mediaType ?? "application/vnd.oci.image.manifest.v1+json";
         }
-
-        /// <summary> V2 image config descriptor. </summary>
-        public Descriptor Config { get; set; }
         /// <summary> List of V2 image layer information. </summary>
-        public IList<Descriptor> Layers { get; }
+        public IReadOnlyList<ContentDescriptor> Layers { get; }
         /// <summary> Additional information provided through arbitrary metadata. </summary>
-        public Annotations Annotations { get; set; }
+        public OciManifestAnnotations Annotations { get; }
     }
 }

@@ -9,48 +9,16 @@ using System.Collections.Generic;
 using System.Text.Json;
 using Azure.Core;
 
-namespace Azure.Containers.ContainerRegistry
+namespace Azure.Containers.ContainerRegistry.ResumableStorage
 {
-    internal partial class OCIIndex : IUtf8JsonSerializable
+    internal partial class OciIndex
     {
-        void IUtf8JsonSerializable.Write(Utf8JsonWriter writer)
+        internal static OciIndex DeserializeOciIndex(JsonElement element)
         {
-            writer.WriteStartObject();
-            if (Optional.IsCollectionDefined(Manifests))
-            {
-                writer.WritePropertyName("manifests");
-                writer.WriteStartArray();
-                foreach (var item in Manifests)
-                {
-                    writer.WriteObjectValue(item);
-                }
-                writer.WriteEndArray();
-            }
-            if (Optional.IsDefined(Annotations))
-            {
-                if (Annotations != null)
-                {
-                    writer.WritePropertyName("annotations");
-                    writer.WriteObjectValue(Annotations);
-                }
-                else
-                {
-                    writer.WriteNull("annotations");
-                }
-            }
-            if (Optional.IsDefined(SchemaVersion))
-            {
-                writer.WritePropertyName("schemaVersion");
-                writer.WriteNumberValue(SchemaVersion.Value);
-            }
-            writer.WriteEndObject();
-        }
-
-        internal static OCIIndex DeserializeOCIIndex(JsonElement element)
-        {
-            Optional<IList<ManifestListAttributes>> manifests = default;
-            Optional<Annotations> annotations = default;
-            Optional<int> schemaVersion = default;
+            Optional<IReadOnlyList<ManifestListAttributes>> manifests = default;
+            Optional<OciManifestAnnotations> annotations = default;
+            int schemaVersion = default;
+            string mediaType = default;
             foreach (var property in element.EnumerateObject())
             {
                 if (property.NameEquals("manifests"))
@@ -75,21 +43,21 @@ namespace Azure.Containers.ContainerRegistry
                         annotations = null;
                         continue;
                     }
-                    annotations = Annotations.DeserializeAnnotations(property.Value);
+                    annotations = OciManifestAnnotations.DeserializeOciManifestAnnotations(property.Value);
                     continue;
                 }
                 if (property.NameEquals("schemaVersion"))
                 {
-                    if (property.Value.ValueKind == JsonValueKind.Null)
-                    {
-                        property.ThrowNonNullablePropertyIsNull();
-                        continue;
-                    }
                     schemaVersion = property.Value.GetInt32();
                     continue;
                 }
+                if (property.NameEquals("mediaType"))
+                {
+                    mediaType = property.Value.GetString();
+                    continue;
+                }
             }
-            return new OCIIndex(Optional.ToNullable(schemaVersion), Optional.ToList(manifests), annotations.Value);
+            return new OciIndex(schemaVersion, mediaType, Optional.ToList(manifests), annotations.Value);
         }
     }
 }

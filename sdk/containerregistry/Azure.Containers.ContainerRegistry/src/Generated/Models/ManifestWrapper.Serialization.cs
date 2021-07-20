@@ -7,131 +7,29 @@
 
 using System.Collections.Generic;
 using System.Text.Json;
+using Azure.Containers.ContainerRegistry.ResumableStorage;
 using Azure.Core;
 
 namespace Azure.Containers.ContainerRegistry
 {
-    internal partial class ManifestWrapper : IUtf8JsonSerializable
+    internal partial class ManifestWrapper
     {
-        void IUtf8JsonSerializable.Write(Utf8JsonWriter writer)
-        {
-            writer.WriteStartObject();
-            if (Optional.IsDefined(MediaType))
-            {
-                writer.WritePropertyName("mediaType");
-                writer.WriteStringValue(MediaType);
-            }
-            if (Optional.IsCollectionDefined(Manifests))
-            {
-                writer.WritePropertyName("manifests");
-                writer.WriteStartArray();
-                foreach (var item in Manifests)
-                {
-                    writer.WriteObjectValue(item);
-                }
-                writer.WriteEndArray();
-            }
-            if (Optional.IsDefined(Config))
-            {
-                writer.WritePropertyName("config");
-                writer.WriteObjectValue(Config);
-            }
-            if (Optional.IsCollectionDefined(Layers))
-            {
-                writer.WritePropertyName("layers");
-                writer.WriteStartArray();
-                foreach (var item in Layers)
-                {
-                    writer.WriteObjectValue(item);
-                }
-                writer.WriteEndArray();
-            }
-            if (Optional.IsDefined(Annotations))
-            {
-                if (Annotations != null)
-                {
-                    writer.WritePropertyName("annotations");
-                    writer.WriteObjectValue(Annotations);
-                }
-                else
-                {
-                    writer.WriteNull("annotations");
-                }
-            }
-            if (Optional.IsDefined(Architecture))
-            {
-                writer.WritePropertyName("architecture");
-                writer.WriteStringValue(Architecture);
-            }
-            if (Optional.IsDefined(Name))
-            {
-                writer.WritePropertyName("name");
-                writer.WriteStringValue(Name);
-            }
-            if (Optional.IsDefined(Tag))
-            {
-                writer.WritePropertyName("tag");
-                writer.WriteStringValue(Tag);
-            }
-            if (Optional.IsCollectionDefined(FsLayers))
-            {
-                writer.WritePropertyName("fsLayers");
-                writer.WriteStartArray();
-                foreach (var item in FsLayers)
-                {
-                    writer.WriteObjectValue(item);
-                }
-                writer.WriteEndArray();
-            }
-            if (Optional.IsCollectionDefined(History))
-            {
-                writer.WritePropertyName("history");
-                writer.WriteStartArray();
-                foreach (var item in History)
-                {
-                    writer.WriteObjectValue(item);
-                }
-                writer.WriteEndArray();
-            }
-            if (Optional.IsCollectionDefined(Signatures))
-            {
-                writer.WritePropertyName("signatures");
-                writer.WriteStartArray();
-                foreach (var item in Signatures)
-                {
-                    writer.WriteObjectValue(item);
-                }
-                writer.WriteEndArray();
-            }
-            if (Optional.IsDefined(SchemaVersion))
-            {
-                writer.WritePropertyName("schemaVersion");
-                writer.WriteNumberValue(SchemaVersion.Value);
-            }
-            writer.WriteEndObject();
-        }
-
         internal static ManifestWrapper DeserializeManifestWrapper(JsonElement element)
         {
-            Optional<string> mediaType = default;
-            Optional<IList<ManifestListAttributes>> manifests = default;
-            Optional<Descriptor> config = default;
-            Optional<IList<Descriptor>> layers = default;
-            Optional<Annotations> annotations = default;
+            Optional<IReadOnlyList<ManifestListAttributes>> manifests = default;
+            Optional<ContentDescriptor> config = default;
+            Optional<IReadOnlyList<ContentDescriptor>> layers = default;
+            Optional<OciManifestAnnotations> annotations = default;
             Optional<string> architecture = default;
             Optional<string> name = default;
             Optional<string> tag = default;
-            Optional<IList<FsLayer>> fsLayers = default;
-            Optional<IList<History>> history = default;
-            Optional<IList<ImageSignature>> signatures = default;
-            Optional<int> schemaVersion = default;
+            Optional<IReadOnlyList<DockerManifestV1FsLayer>> fsLayers = default;
+            Optional<IReadOnlyList<DockerManifestV1History>> history = default;
+            Optional<IReadOnlyList<DockerManifestV1ImageSignature>> signatures = default;
+            int schemaVersion = default;
+            string mediaType = default;
             foreach (var property in element.EnumerateObject())
             {
-                if (property.NameEquals("mediaType"))
-                {
-                    mediaType = property.Value.GetString();
-                    continue;
-                }
                 if (property.NameEquals("manifests"))
                 {
                     if (property.Value.ValueKind == JsonValueKind.Null)
@@ -154,7 +52,7 @@ namespace Azure.Containers.ContainerRegistry
                         property.ThrowNonNullablePropertyIsNull();
                         continue;
                     }
-                    config = Descriptor.DeserializeDescriptor(property.Value);
+                    config = ContentDescriptor.DeserializeContentDescriptor(property.Value);
                     continue;
                 }
                 if (property.NameEquals("layers"))
@@ -164,10 +62,10 @@ namespace Azure.Containers.ContainerRegistry
                         property.ThrowNonNullablePropertyIsNull();
                         continue;
                     }
-                    List<Descriptor> array = new List<Descriptor>();
+                    List<ContentDescriptor> array = new List<ContentDescriptor>();
                     foreach (var item in property.Value.EnumerateArray())
                     {
-                        array.Add(Descriptor.DeserializeDescriptor(item));
+                        array.Add(ContentDescriptor.DeserializeContentDescriptor(item));
                     }
                     layers = array;
                     continue;
@@ -179,7 +77,7 @@ namespace Azure.Containers.ContainerRegistry
                         annotations = null;
                         continue;
                     }
-                    annotations = Annotations.DeserializeAnnotations(property.Value);
+                    annotations = OciManifestAnnotations.DeserializeOciManifestAnnotations(property.Value);
                     continue;
                 }
                 if (property.NameEquals("architecture"))
@@ -204,10 +102,10 @@ namespace Azure.Containers.ContainerRegistry
                         property.ThrowNonNullablePropertyIsNull();
                         continue;
                     }
-                    List<FsLayer> array = new List<FsLayer>();
+                    List<DockerManifestV1FsLayer> array = new List<DockerManifestV1FsLayer>();
                     foreach (var item in property.Value.EnumerateArray())
                     {
-                        array.Add(FsLayer.DeserializeFsLayer(item));
+                        array.Add(DockerManifestV1FsLayer.DeserializeDockerManifestV1FsLayer(item));
                     }
                     fsLayers = array;
                     continue;
@@ -219,10 +117,10 @@ namespace Azure.Containers.ContainerRegistry
                         property.ThrowNonNullablePropertyIsNull();
                         continue;
                     }
-                    List<History> array = new List<History>();
+                    List<DockerManifestV1History> array = new List<DockerManifestV1History>();
                     foreach (var item in property.Value.EnumerateArray())
                     {
-                        array.Add(ContainerRegistry.History.DeserializeHistory(item));
+                        array.Add(DockerManifestV1History.DeserializeDockerManifestV1History(item));
                     }
                     history = array;
                     continue;
@@ -234,26 +132,26 @@ namespace Azure.Containers.ContainerRegistry
                         property.ThrowNonNullablePropertyIsNull();
                         continue;
                     }
-                    List<ImageSignature> array = new List<ImageSignature>();
+                    List<DockerManifestV1ImageSignature> array = new List<DockerManifestV1ImageSignature>();
                     foreach (var item in property.Value.EnumerateArray())
                     {
-                        array.Add(ImageSignature.DeserializeImageSignature(item));
+                        array.Add(DockerManifestV1ImageSignature.DeserializeDockerManifestV1ImageSignature(item));
                     }
                     signatures = array;
                     continue;
                 }
                 if (property.NameEquals("schemaVersion"))
                 {
-                    if (property.Value.ValueKind == JsonValueKind.Null)
-                    {
-                        property.ThrowNonNullablePropertyIsNull();
-                        continue;
-                    }
                     schemaVersion = property.Value.GetInt32();
                     continue;
                 }
+                if (property.NameEquals("mediaType"))
+                {
+                    mediaType = property.Value.GetString();
+                    continue;
+                }
             }
-            return new ManifestWrapper(Optional.ToNullable(schemaVersion), mediaType.Value, Optional.ToList(manifests), config.Value, Optional.ToList(layers), annotations.Value, architecture.Value, name.Value, tag.Value, Optional.ToList(fsLayers), Optional.ToList(history), Optional.ToList(signatures));
+            return new ManifestWrapper(schemaVersion, mediaType, Optional.ToList(manifests), config.Value, Optional.ToList(layers), annotations.Value, architecture.Value, name.Value, tag.Value, Optional.ToList(fsLayers), Optional.ToList(history), Optional.ToList(signatures));
         }
     }
 }

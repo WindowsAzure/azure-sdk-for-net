@@ -9,54 +9,17 @@ using System.Collections.Generic;
 using System.Text.Json;
 using Azure.Core;
 
-namespace Azure.Containers.ContainerRegistry
+namespace Azure.Containers.ContainerRegistry.ResumableStorage
 {
-    internal partial class OCIManifest : IUtf8JsonSerializable
+    internal partial class OciManifest
     {
-        void IUtf8JsonSerializable.Write(Utf8JsonWriter writer)
+        internal static OciManifest DeserializeOciManifest(JsonElement element)
         {
-            writer.WriteStartObject();
-            if (Optional.IsDefined(Config))
-            {
-                writer.WritePropertyName("config");
-                writer.WriteObjectValue(Config);
-            }
-            if (Optional.IsCollectionDefined(Layers))
-            {
-                writer.WritePropertyName("layers");
-                writer.WriteStartArray();
-                foreach (var item in Layers)
-                {
-                    writer.WriteObjectValue(item);
-                }
-                writer.WriteEndArray();
-            }
-            if (Optional.IsDefined(Annotations))
-            {
-                if (Annotations != null)
-                {
-                    writer.WritePropertyName("annotations");
-                    writer.WriteObjectValue(Annotations);
-                }
-                else
-                {
-                    writer.WriteNull("annotations");
-                }
-            }
-            if (Optional.IsDefined(SchemaVersion))
-            {
-                writer.WritePropertyName("schemaVersion");
-                writer.WriteNumberValue(SchemaVersion.Value);
-            }
-            writer.WriteEndObject();
-        }
-
-        internal static OCIManifest DeserializeOCIManifest(JsonElement element)
-        {
-            Optional<Descriptor> config = default;
-            Optional<IList<Descriptor>> layers = default;
-            Optional<Annotations> annotations = default;
-            Optional<int> schemaVersion = default;
+            Optional<ContentDescriptor> config = default;
+            Optional<IReadOnlyList<ContentDescriptor>> layers = default;
+            Optional<OciManifestAnnotations> annotations = default;
+            int schemaVersion = default;
+            string mediaType = default;
             foreach (var property in element.EnumerateObject())
             {
                 if (property.NameEquals("config"))
@@ -66,7 +29,7 @@ namespace Azure.Containers.ContainerRegistry
                         property.ThrowNonNullablePropertyIsNull();
                         continue;
                     }
-                    config = Descriptor.DeserializeDescriptor(property.Value);
+                    config = ContentDescriptor.DeserializeContentDescriptor(property.Value);
                     continue;
                 }
                 if (property.NameEquals("layers"))
@@ -76,10 +39,10 @@ namespace Azure.Containers.ContainerRegistry
                         property.ThrowNonNullablePropertyIsNull();
                         continue;
                     }
-                    List<Descriptor> array = new List<Descriptor>();
+                    List<ContentDescriptor> array = new List<ContentDescriptor>();
                     foreach (var item in property.Value.EnumerateArray())
                     {
-                        array.Add(Descriptor.DeserializeDescriptor(item));
+                        array.Add(ContentDescriptor.DeserializeContentDescriptor(item));
                     }
                     layers = array;
                     continue;
@@ -91,21 +54,21 @@ namespace Azure.Containers.ContainerRegistry
                         annotations = null;
                         continue;
                     }
-                    annotations = Annotations.DeserializeAnnotations(property.Value);
+                    annotations = OciManifestAnnotations.DeserializeOciManifestAnnotations(property.Value);
                     continue;
                 }
                 if (property.NameEquals("schemaVersion"))
                 {
-                    if (property.Value.ValueKind == JsonValueKind.Null)
-                    {
-                        property.ThrowNonNullablePropertyIsNull();
-                        continue;
-                    }
                     schemaVersion = property.Value.GetInt32();
                     continue;
                 }
+                if (property.NameEquals("mediaType"))
+                {
+                    mediaType = property.Value.GetString();
+                    continue;
+                }
             }
-            return new OCIManifest(Optional.ToNullable(schemaVersion), config.Value, Optional.ToList(layers), annotations.Value);
+            return new OciManifest(schemaVersion, mediaType, config.Value, Optional.ToList(layers), annotations.Value);
         }
     }
 }

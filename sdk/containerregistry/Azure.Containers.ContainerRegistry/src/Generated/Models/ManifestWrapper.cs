@@ -6,21 +6,24 @@
 #nullable disable
 
 using System.Collections.Generic;
+using Azure.Containers.ContainerRegistry.ResumableStorage;
 using Azure.Core;
 
 namespace Azure.Containers.ContainerRegistry
 {
     /// <summary> Returns the requested manifest file. </summary>
-    internal partial class ManifestWrapper : Manifest
+    internal partial class ManifestWrapper : ImageManifest
     {
         /// <summary> Initializes a new instance of ManifestWrapper. </summary>
-        public ManifestWrapper()
+        /// <param name="schemaVersion"> Schema version. </param>
+        internal ManifestWrapper(int schemaVersion) : base(schemaVersion)
         {
             Manifests = new ChangeTrackingList<ManifestListAttributes>();
-            Layers = new ChangeTrackingList<Descriptor>();
-            FsLayers = new ChangeTrackingList<FsLayer>();
-            History = new ChangeTrackingList<History>();
-            Signatures = new ChangeTrackingList<ImageSignature>();
+            Layers = new ChangeTrackingList<ContentDescriptor>();
+            FsLayers = new ChangeTrackingList<DockerManifestV1FsLayer>();
+            History = new ChangeTrackingList<DockerManifestV1History>();
+            Signatures = new ChangeTrackingList<DockerManifestV1ImageSignature>();
+            MediaType = "ManifestWrapper";
         }
 
         /// <summary> Initializes a new instance of ManifestWrapper. </summary>
@@ -36,9 +39,8 @@ namespace Azure.Containers.ContainerRegistry
         /// <param name="fsLayers"> (V1) List of layer information. </param>
         /// <param name="history"> (V1) Image history. </param>
         /// <param name="signatures"> (V1) Image signature. </param>
-        internal ManifestWrapper(int? schemaVersion, string mediaType, IList<ManifestListAttributes> manifests, Descriptor config, IList<Descriptor> layers, Annotations annotations, string architecture, string name, string tag, IList<FsLayer> fsLayers, IList<History> history, IList<ImageSignature> signatures) : base(schemaVersion)
+        internal ManifestWrapper(int schemaVersion, string mediaType, IReadOnlyList<ManifestListAttributes> manifests, ContentDescriptor config, IReadOnlyList<ContentDescriptor> layers, OciManifestAnnotations annotations, string architecture, string name, string tag, IReadOnlyList<DockerManifestV1FsLayer> fsLayers, IReadOnlyList<DockerManifestV1History> history, IReadOnlyList<DockerManifestV1ImageSignature> signatures) : base(schemaVersion, mediaType)
         {
-            MediaType = mediaType;
             Manifests = manifests;
             Config = config;
             Layers = layers;
@@ -49,29 +51,28 @@ namespace Azure.Containers.ContainerRegistry
             FsLayers = fsLayers;
             History = history;
             Signatures = signatures;
+            MediaType = mediaType ?? "ManifestWrapper";
         }
 
-        /// <summary> Media type for this Manifest. </summary>
-        public string MediaType { get; set; }
         /// <summary> (ManifestList, OCIIndex) List of V2 image layer information. </summary>
-        public IList<ManifestListAttributes> Manifests { get; }
+        public IReadOnlyList<ManifestListAttributes> Manifests { get; }
         /// <summary> (V2, OCI) Image config descriptor. </summary>
-        public Descriptor Config { get; set; }
+        public ContentDescriptor Config { get; }
         /// <summary> (V2, OCI) List of V2 image layer information. </summary>
-        public IList<Descriptor> Layers { get; }
+        public IReadOnlyList<ContentDescriptor> Layers { get; }
         /// <summary> (OCI, OCIIndex) Additional metadata. </summary>
-        public Annotations Annotations { get; set; }
+        public OciManifestAnnotations Annotations { get; }
         /// <summary> (V1) CPU architecture. </summary>
-        public string Architecture { get; set; }
+        public string Architecture { get; }
         /// <summary> (V1) Image name. </summary>
-        public string Name { get; set; }
+        public string Name { get; }
         /// <summary> (V1) Image tag. </summary>
-        public string Tag { get; set; }
+        public string Tag { get; }
         /// <summary> (V1) List of layer information. </summary>
-        public IList<FsLayer> FsLayers { get; }
+        public IReadOnlyList<DockerManifestV1FsLayer> FsLayers { get; }
         /// <summary> (V1) Image history. </summary>
-        public IList<History> History { get; }
+        public IReadOnlyList<DockerManifestV1History> History { get; }
         /// <summary> (V1) Image signature. </summary>
-        public IList<ImageSignature> Signatures { get; }
+        public IReadOnlyList<DockerManifestV1ImageSignature> Signatures { get; }
     }
 }

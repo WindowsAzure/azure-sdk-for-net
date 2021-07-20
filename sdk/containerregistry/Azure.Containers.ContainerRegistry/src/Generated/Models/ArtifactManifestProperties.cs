@@ -34,7 +34,7 @@ namespace Azure.Containers.ContainerRegistry
         }
 
         /// <summary> Initializes a new instance of ArtifactManifestProperties. </summary>
-        /// <param name="registryLoginServer"> Registry login server name. This is likely to be similar to {registry-name}.azurecr.io. </param>
+        /// <param name="registryLoginServer"> Registry login server name.  This is likely to be similar to {registry-name}.azurecr.io. </param>
         /// <param name="repositoryName"> Repository name. </param>
         /// <param name="digest"> Manifest. </param>
         /// <param name="size"> Image size. </param>
@@ -42,6 +42,7 @@ namespace Azure.Containers.ContainerRegistry
         /// <param name="lastUpdatedOn"> Last update time. </param>
         /// <param name="architecture"> CPU architecture. </param>
         /// <param name="operatingSystem"> Operating system. </param>
+        /// <param name="mediaType"> Media type. </param>
         /// <param name="relatedArtifacts"> List of artifacts that are referenced by this manifest list, with information about the platform each supports.  This list will be empty if this is a leaf manifest and not a manifest list. </param>
         /// <param name="tags"> List of tags. </param>
         /// <param name="canDelete"> Delete enabled. </param>
@@ -50,7 +51,7 @@ namespace Azure.Containers.ContainerRegistry
         /// <param name="canRead"> Read enabled. </param>
         /// <param name="quarantineState"> Quarantine state. </param>
         /// <param name="quarantineDetails"> Quarantine details. </param>
-        internal ArtifactManifestProperties(string registryLoginServer, string repositoryName, string digest, long? size, DateTimeOffset createdOn, DateTimeOffset lastUpdatedOn, ArtifactArchitecture? architecture, ArtifactOperatingSystem? operatingSystem, IReadOnlyList<ArtifactManifestPlatform> relatedArtifacts, IReadOnlyList<string> tags, bool? canDelete, bool? canWrite, bool? canList, bool? canRead, string quarantineState, string quarantineDetails)
+        internal ArtifactManifestProperties(string registryLoginServer, string repositoryName, string digest, long? size, DateTimeOffset createdOn, DateTimeOffset lastUpdatedOn, ArtifactArchitecture? architecture, ArtifactOperatingSystem? operatingSystem, string mediaType, IReadOnlyList<ArtifactManifestPlatform> relatedArtifacts, IReadOnlyList<string> tags, bool? canDelete, bool? canWrite, bool? canList, bool? canRead, string quarantineState, string quarantineDetails)
         {
             RegistryLoginServer = registryLoginServer;
             RepositoryName = repositoryName;
@@ -60,6 +61,7 @@ namespace Azure.Containers.ContainerRegistry
             LastUpdatedOn = lastUpdatedOn;
             Architecture = architecture;
             OperatingSystem = operatingSystem;
+            MediaType = mediaType;
             RelatedArtifacts = relatedArtifacts;
             Tags = tags;
             CanDelete = canDelete;
@@ -70,7 +72,7 @@ namespace Azure.Containers.ContainerRegistry
             QuarantineDetails = quarantineDetails;
         }
 
-        /// <summary> Registry login server name. This is likely to be similar to {registry-name}.azurecr.io. </summary>
+        /// <summary> Registry login server name.  This is likely to be similar to {registry-name}.azurecr.io. </summary>
         public string RegistryLoginServer { get; }
         /// <summary> Repository name. </summary>
         public string RepositoryName { get; }
